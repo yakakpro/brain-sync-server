@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Observer with Wisdom</title>
+  <title>oQs — Wise Mentor Mode</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -40,35 +40,11 @@
       50% { box-shadow: 0 0 16px 6px rgba(0,255,255,0.7); }
       100% { box-shadow: 0 0 6px 2px rgba(0,255,255,0.2); }
     }
-    .observer-panel {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: #1e293b;
-      color: white;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      z-index: 50;
-      box-shadow: 0 0 8px rgba(255,255,255,0.1);
-    }
-    .observer-panel button {
-      background: #334155;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      margin-top: 6px;
-      font-size: 13px;
-    }
   </style>
 </head>
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
-<div class="observer-panel" id="observerPanel">
-  <div id="obsText">👁 Наблюдение: —</div>
-  <button onclick="observe()">🎲 Обновить наблюдение</button>
-</div>
 
 <script>
   const COLORS = {
@@ -89,20 +65,14 @@
     default: "#9ca3af"
   };
 
-  const params = new URLSearchParams(location.search);
-  const netId = params.get("id") || "default";
   const container = document.getElementById("container");
   const canvas = document.getElementById("bg");
   const ctx = canvas.getContext("2d");
-  const obsText = document.getElementById("obsText");
 
   let nodePoints = [];
   let rawData = {};
   let nodeKeys = [];
   let nodeElements = [];
-  let observerKey = null;
-  let observeCounter = {};
-  let transformHistory = [];
 
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -112,7 +82,7 @@
   resizeCanvas();
 
   async function load() {
-    const res = await fetch("/api/load-brain?id=" + netId);
+    const res = await fetch("/api/load-brain");
     rawData = await res.json();
     const nodes = Object.entries(rawData);
     const centerX = window.innerWidth / 2;
@@ -123,7 +93,6 @@
     nodePoints = [];
     nodeKeys = [];
     nodeElements = [];
-    observeCounter = [];
 
     nodes.forEach(([key, node], i) => {
       const angle = (2 * Math.PI * i) / nodes.length;
@@ -138,6 +107,8 @@
       el.style.top = `${y - 10}px`;
       el.dataset.key = key;
 
+      if (node.wise) el.classList.add("wise");
+
       container.appendChild(el);
       nodePoints.push({ x, y });
       nodeKeys.push(key);
@@ -145,7 +116,7 @@
     });
 
     drawConnections();
-    observe();
+    mentorLoop();
   }
 
   function drawConnections() {
@@ -166,44 +137,38 @@
     }
   }
 
-  function observe() {
-    nodeElements.forEach(el => el.classList.remove("highlight", "wise"));
-    const randIndex = Math.floor(Math.random() * nodeKeys.length);
-    const refKey = nodeKeys[randIndex];
-    const refNode = rawData[refKey];
-    const type = Math.random() < 0.5 ? "strategy" : "personality";
-    const value = refNode[type];
+  function mentorLoop() {
+    setInterval(() => {
+      for (let i = 0; i < nodeKeys.length; i++) {
+        const key = nodeKeys[i];
+        const brain = rawData[key];
+        if (brain.wise && brain.transformHistory?.length >= 5) {
+          const originX = nodePoints[i].x;
+          const originY = nodePoints[i].y;
 
-    obsText.innerText = `👁 Наблюдение: ${type === "strategy" ? "Стратегия" : "Характер"} — ${value}`;
-    if (!observerKey) observerKey = nodeKeys[Math.floor(Math.random() * nodeKeys.length)];
-
-    nodeKeys.forEach((k, i) => {
-      if (rawData[k][type] === value) {
-        nodeElements[i].classList.add("highlight");
+          for (let j = 0; j < nodeKeys.length; j++) {
+            if (i === j) continue;
+            const otherKey = nodeKeys[j];
+            const other = rawData[otherKey];
+            const dx = originX - nodePoints[j].x;
+            const dy = originY - nodePoints[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 160 && !other.wise && !other.frozen && Math.random() < 0.3) {
+              other.strategy = brain.strategy;
+              other.peaceMoments = (other.peaceMoments || 0) + 1;
+              other.inspiredBy = "wise";
+              other.quoteOverride = "🌠 Я делюсь своим путём";
+              document.querySelector(`[data-key="${otherKey}"]`)?.classList.add("evolved");
+            }
+          }
+        }
       }
-    });
-
-    observeCounter[value] = (observeCounter[value] || 0) + 1;
-    if (observeCounter[value] >= 3 && !rawData[observerKey].wise) {
-      rawData[observerKey][type] = value;
-      transformHistory.push(value);
-      rawData[observerKey].quoteOverride = "🪞 Я стал тем, на кого смотрел";
-      nodeElements[nodeKeys.indexOf(observerKey)].classList.add("evolved");
-
-      const unique = [...new Set(transformHistory)];
-      if (unique.length >= 5) {
-        rawData[observerKey].wise = true;
-        rawData[observerKey].quoteOverride = "🧠 Я стал мудрым через опыт";
-        nodeElements[nodeKeys.indexOf(observerKey)].classList.add("wise");
-      }
-
       save();
-      observeCounter = {};
-    }
+    }, 10000);
   }
 
   async function save() {
-    await fetch("/api/save-brain?id=" + netId, {
+    await fetch("/api/save-brain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(rawData)
