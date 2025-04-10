@@ -29,9 +29,12 @@
   </div>
 
   <script>
+    const params = new URLSearchParams(window.location.search);
+    const netId = params.get("id") || "default";
+
     async function updateStats() {
       try {
-        const res = await fetch('/api/load-brain');
+        const res = await fetch('/api/load-brain?id=' + netId);
         const data = await res.json();
         const all = Object.values(data);
         const total = all.length;
@@ -39,15 +42,13 @@
         const superNodes = all.filter(b => b.strategy === 'super').length;
         const reborn = all.filter(b => b.strategy === 'reborn').length;
         const origin = all.filter(b => b.strategy === 'origin').length;
-        const phase = window.__CLOUD_STATUS__ || '—';
 
         document.getElementById('status').innerHTML = `
-          <div>🧠 Всего узлов: <b>${total}</b></div>
+          <div>🧠 Узлов в сети <b>${netId}</b>: <b>${total}</b></div>
           <div>🧘 Zen: <b>${zen}</b></div>
           <div>♻️ Reborn: <b>${reborn}</b></div>
           <div>🌟 Origin: <b>${origin}</b></div>
           <div>🧬 Super: <b>${superNodes}</b></div>
-          <div>📡 Фаза: <b>${phase}</b></div>
         `;
       } catch {
         document.getElementById('status').innerText = '⚠️ Невозможно загрузить состояние';
