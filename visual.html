@@ -3,25 +3,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Visual</title>
+  <title>oQs — Visual v2</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      background: radial-gradient(circle, #0d0f11, #060708);
-      overflow: hidden;
+    html, body {
       margin: 0;
       padding: 0;
+      background: radial-gradient(circle, #0d0f11, #060708);
+      overflow: hidden;
+      font-family: monospace;
     }
     .node {
       position: absolute;
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
-      opacity: 0.9;
       transition: transform 0.3s;
+      box-shadow: 0 0 6px rgba(255,255,255,0.2);
     }
     .node:hover {
-      transform: scale(1.4);
+      transform: scale(1.5);
       z-index: 10;
     }
   </style>
@@ -49,8 +50,20 @@
     default: "#9ca3af"
   };
 
-  const netId = new URLSearchParams(location.search).get("id") || "default";
+  const params = new URLSearchParams(location.search);
+  const netId = params.get("id") || "default";
   const container = document.getElementById("container");
+  const canvas = document.getElementById("bg");
+  const ctx = canvas.getContext("2d");
+
+  let nodePoints = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
 
   async function load() {
     const res = await fetch("/api/load-brain?id=" + netId);
@@ -58,24 +71,59 @@
     const nodes = Object.values(data);
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
-    const radius = Math.min(centerX, centerY) - 50;
+    const radius = Math.min(centerX, centerY) - 80;
 
     container.innerHTML = "";
+    nodePoints = [];
 
     nodes.forEach((node, i) => {
       const angle = (2 * Math.PI * i) / nodes.length;
       const x = centerX + radius * Math.cos(angle);
       const y = centerY + radius * Math.sin(angle);
       const color = COLORS[node.strategy] || COLORS.default;
+      const peace = node.peaceMoments || 0;
 
       const el = document.createElement("div");
       el.className = "node";
       el.style.background = color;
-      el.style.left = `${x - 12}px`;
-      el.style.top = `${y - 12}px`;
+      el.style.left = `${x - 10}px`;
+      el.style.top = `${y - 10}px`;
+      el.style.animation = `pulse-${i} ${(6 - Math.min(peace, 5)) + 1}s ease-in-out infinite`;
       el.title = `${node.name || "узел"}\n💡 ${node.strategy}\n🧠 ${node.personality}`;
+
+      const style = document.createElement("style");
+      style.innerHTML = `
+        @keyframes pulse-${i} {
+          0%, 100% { box-shadow: 0 0 6px ${color}; }
+          50% { box-shadow: 0 0 14px ${color}; }
+        }
+      `;
+      document.head.appendChild(style);
+
       container.appendChild(el);
+      nodePoints.push({ x, y });
     });
+
+    drawConnections();
+  }
+
+  function drawConnections() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+    ctx.lineWidth = 1;
+
+    for (let i = 0; i < nodePoints.length; i++) {
+      for (let j = i + 1; j < nodePoints.length; j++) {
+        if (Math.random() < 0.08) {
+          const a = nodePoints[i];
+          const b = nodePoints[j];
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      }
+    }
   }
 
   load();
