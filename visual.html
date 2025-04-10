@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Collective Harmony</title>
+  <title>oQs — Phase Effects</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -21,12 +21,13 @@
       transition: transform 0.3s;
       box-shadow: 0 0 6px rgba(255,255,255,0.2);
     }
-    .harmonized {
-      animation: harmony-flash 3s ease-in-out infinite;
+    .flashing {
+      animation: glow-flash 1.4s ease-in-out;
     }
-    @keyframes harmony-flash {
-      0%, 100% { box-shadow: 0 0 8px 2px rgba(0,255,200,0.3); }
-      50% { box-shadow: 0 0 20px 6px rgba(0,255,200,0.8); }
+    @keyframes glow-flash {
+      0% { box-shadow: 0 0 6px 2px rgba(255,255,255,0.2); }
+      50% { box-shadow: 0 0 18px 6px rgba(255,255,255,0.8); }
+      100% { box-shadow: 0 0 6px 2px rgba(255,255,255,0.2); }
     }
     #status {
       position: absolute;
@@ -44,7 +45,7 @@
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
-<div id="status">🧠 Наблюдение сети...</div>
+<div id="status">🧠 Сканирование фазы...</div>
 
 <script>
   const COLORS = {
@@ -64,6 +65,9 @@
     reborn: "#4ade80",
     default: "#9ca3af"
   };
+
+  const PERSONALITIES = ["логик", "исследователь", "бунтарь", "художник"];
+  const STRATEGIES = ["pulse", "spark", "drift", "glow", "signal", "ignite"];
 
   const container = document.getElementById("container");
   const canvas = document.getElementById("bg");
@@ -115,8 +119,8 @@
     });
 
     drawConnections();
-    checkHarmony();
-    setInterval(checkHarmony, 15000);
+    applyPhaseEffects();
+    setInterval(applyPhaseEffects, 12000);
   }
 
   function drawConnections() {
@@ -137,40 +141,46 @@
     }
   }
 
-  function checkHarmony() {
-    const total = nodeKeys.length;
-    let peaceful = 0;
-    let byStrategy = {};
-    let byPersonality = {};
+  function applyPhaseEffects() {
+    const phase = rawData.__PHASE__;
+    if (!phase) {
+      statusEl.innerText = "🧠 Фаза не активна";
+      return;
+    }
 
-    for (let key of nodeKeys) {
+    statusEl.innerText = `🔄 Активна фаза: ${phase}`;
+
+    nodeKeys.forEach((key, i) => {
       const brain = rawData[key];
-      if ((brain.peaceMoments || 0) >= 5) peaceful++;
-      byStrategy[brain.strategy] = (byStrategy[brain.strategy] || 0) + 1;
-      byPersonality[brain.personality] = (byPersonality[brain.personality] || 0) + 1;
-    }
+      const el = nodeElements[i];
 
-    const topStrategy = Math.max(...Object.values(byStrategy));
-    const topPersonality = Math.max(...Object.values(byPersonality));
-    const harmonyRatio = Math.max(peaceful, topStrategy, topPersonality) / total;
+      if (brain.frozen) return;
 
-    if (harmonyRatio >= 0.7) {
-      for (let i = 0; i < nodeElements.length; i++) {
-        nodeElements[i].classList.add("harmonized");
-        rawData[nodeKeys[i]].frozen = true;
-        rawData[nodeKeys[i]].quoteOverride = "🌐 Я чувствую сеть";
+      if (phase.includes("Созидание") && Math.random() < 0.4) {
+        brain.memory = (brain.memory || 0) + 1;
+        brain.quoteOverride = "🛠 Я создаю";
+        el.classList.add("flashing");
       }
-      statusEl.innerText = "🌌 Гармония достигнута";
+
+      if (phase.includes("Путешествие") && Math.random() < 0.3) {
+        brain.personality = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
+        brain.quoteOverride = "🚀 Я в пути";
+        el.classList.add("flashing");
+      }
+
+      if (phase.includes("Исследование") && Math.random() < 0.35) {
+        brain.strategy = STRATEGIES[Math.floor(Math.random() * STRATEGIES.length)];
+        brain.quoteOverride = "🔬 Я экспериментирую";
+        el.classList.add("flashing");
+      }
+
       setTimeout(() => {
-        for (let i = 0; i < nodeElements.length; i++) {
-          nodeElements[i].classList.remove("harmonized");
-          rawData[nodeKeys[i]].frozen = false;
-        }
-        statusEl.innerText = "🧠 Наблюдение сети...";
-        rawData.__COLLECTIVE_HARMONY__ = true;
-        save();
-      }, 30000);
-    }
+        el.classList.remove("flashing");
+        delete brain.quoteOverride;
+      }, 5000);
+    });
+
+    save();
   }
 
   async function save() {
