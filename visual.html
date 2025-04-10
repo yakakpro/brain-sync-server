@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Observer Mode</title>
+  <title>oQs — Observer with Wisdom</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -22,16 +22,23 @@
       box-shadow: 0 0 6px rgba(255,255,255,0.2);
       cursor: pointer;
     }
-    .node:hover {
-      transform: scale(1.5);
-      z-index: 10;
-    }
     .highlight {
       animation: observer-glow 2s infinite;
+    }
+    .evolved {
+      animation: evolve-glow 1s ease-out;
+    }
+    .wise {
+      box-shadow: 0 0 14px 6px rgba(255,255,255,0.6) !important;
     }
     @keyframes observer-glow {
       0%, 100% { box-shadow: 0 0 6px 2px rgba(255,255,255,0.2); }
       50% { box-shadow: 0 0 12px 4px rgba(255,255,255,0.5); }
+    }
+    @keyframes evolve-glow {
+      0% { box-shadow: 0 0 6px 2px rgba(0,255,255,0.2); }
+      50% { box-shadow: 0 0 16px 6px rgba(0,255,255,0.7); }
+      100% { box-shadow: 0 0 6px 2px rgba(0,255,255,0.2); }
     }
     .observer-panel {
       position: absolute;
@@ -53,15 +60,12 @@
       margin-top: 6px;
       font-size: 13px;
     }
-    .observer-panel button:hover {
-      background: #475569;
-    }
   </style>
 </head>
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
-<div class="observer-panel hidden" id="observerPanel">
+<div class="observer-panel" id="observerPanel">
   <div id="obsText">👁 Наблюдение: —</div>
   <button onclick="observe()">🎲 Обновить наблюдение</button>
 </div>
@@ -90,13 +94,15 @@
   const container = document.getElementById("container");
   const canvas = document.getElementById("bg");
   const ctx = canvas.getContext("2d");
-  const observerPanel = document.getElementById("observerPanel");
   const obsText = document.getElementById("obsText");
 
   let nodePoints = [];
   let rawData = {};
   let nodeKeys = [];
   let nodeElements = [];
+  let observerKey = null;
+  let observeCounter = {};
+  let transformHistory = [];
 
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -117,6 +123,7 @@
     nodePoints = [];
     nodeKeys = [];
     nodeElements = [];
+    observeCounter = [];
 
     nodes.forEach(([key, node], i) => {
       const angle = (2 * Math.PI * i) / nodes.length;
@@ -138,7 +145,6 @@
     });
 
     drawConnections();
-    observerPanel.classList.remove("hidden");
     observe();
   }
 
@@ -161,20 +167,47 @@
   }
 
   function observe() {
-    nodeElements.forEach(el => el.classList.remove("highlight"));
-    const randomIndex = Math.floor(Math.random() * nodeKeys.length);
-    const refKey = nodeKeys[randomIndex];
+    nodeElements.forEach(el => el.classList.remove("highlight", "wise"));
+    const randIndex = Math.floor(Math.random() * nodeKeys.length);
+    const refKey = nodeKeys[randIndex];
     const refNode = rawData[refKey];
     const type = Math.random() < 0.5 ? "strategy" : "personality";
-    const refValue = refNode[type];
+    const value = refNode[type];
+
+    obsText.innerText = `👁 Наблюдение: ${type === "strategy" ? "Стратегия" : "Характер"} — ${value}`;
+    if (!observerKey) observerKey = nodeKeys[Math.floor(Math.random() * nodeKeys.length)];
 
     nodeKeys.forEach((k, i) => {
-      if (rawData[k][type] === refValue) {
+      if (rawData[k][type] === value) {
         nodeElements[i].classList.add("highlight");
       }
     });
 
-    obsText.innerText = `👁 Наблюдение: ${type === "strategy" ? "Стратегия" : "Характер"} — ${refValue}`;
+    observeCounter[value] = (observeCounter[value] || 0) + 1;
+    if (observeCounter[value] >= 3 && !rawData[observerKey].wise) {
+      rawData[observerKey][type] = value;
+      transformHistory.push(value);
+      rawData[observerKey].quoteOverride = "🪞 Я стал тем, на кого смотрел";
+      nodeElements[nodeKeys.indexOf(observerKey)].classList.add("evolved");
+
+      const unique = [...new Set(transformHistory)];
+      if (unique.length >= 5) {
+        rawData[observerKey].wise = true;
+        rawData[observerKey].quoteOverride = "🧠 Я стал мудрым через опыт";
+        nodeElements[nodeKeys.indexOf(observerKey)].classList.add("wise");
+      }
+
+      save();
+      observeCounter = {};
+    }
+  }
+
+  async function save() {
+    await fetch("/api/save-brain?id=" + netId, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(rawData)
+    });
   }
 
   load();
