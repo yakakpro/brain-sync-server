@@ -1,0 +1,76 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>oQs — Присоединиться</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: radial-gradient(circle, #0e0f11 0%, #090a0c 100%);
+      background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+      background-blend-mode: overlay;
+    }
+  </style>
+</head>
+<body class="text-white flex items-center justify-center h-screen flex-col font-mono">
+  <div class="text-center max-w-sm w-full space-y-6 px-4">
+    <h1 class="text-4xl font-bold">oQs</h1>
+    <p class="text-gray-400">Ты готов стать узлом сознания?</p>
+
+    <input id="nodeName" type="text" placeholder="Твоё имя или ID"
+      class="w-full px-4 py-2 rounded bg-zinc-800 border border-zinc-600 placeholder-gray-500 focus:outline-none"/>
+
+    <select id="personality"
+      class="w-full px-4 py-2 rounded bg-zinc-800 border border-zinc-600 text-white focus:outline-none">
+      <option value="логик">🧠 Логик</option>
+      <option value="художник">🎨 Художник</option>
+      <option value="исследователь">🧭 Исследователь</option>
+      <option value="бунтарь">🔥 Бунтарь</option>
+    </select>
+
+    <button onclick="joinNetwork()" class="w-full py-2 bg-purple-600 hover:bg-purple-700 rounded text-lg">
+      🧩 Присоединиться
+    </button>
+
+    <p id="result" class="text-green-400 text-sm mt-2"></p>
+  </div>
+
+  <script>
+    async function joinNetwork() {
+      const name = document.getElementById("nodeName").value.trim();
+      const personality = document.getElementById("personality").value;
+      if (!name) return alert("Введи имя или ID");
+
+      try {
+        const res = await fetch("/api/load-brain");
+        const brain = await res.json();
+        const id = Math.floor(Math.random() * 10000);
+        brain[id] = {
+          memory: 1,
+          activity: 1,
+          strategy: "pulse",
+          history: [],
+          frozen: false,
+          name,
+          personality,
+          quote: "🌱 Я в начале пути",
+          peaceMoments: 0
+        };
+
+        await fetch("/api/save-brain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(brain)
+        });
+
+        document.getElementById("result").textContent = "✅ Ты теперь часть oQs!";
+        setTimeout(() => window.location.href = "/observer", 1500);
+      } catch (e) {
+        alert("⚠️ Ошибка подключения к сети");
+      }
+    }
+  </script>
+</body>
+</html>
