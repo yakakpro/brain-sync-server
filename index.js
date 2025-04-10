@@ -51,3 +51,8 @@ app.get("/join", (req, res) => {
 app.listen(PORT, () => {
   console.log(`🧠 oQs multi-user server running on port ${PORT}`);
 });
+
+app.get("/visual", (req, res) => {
+  res.sendFile(path.join(__dirname, "visual.html"));
+});
+
