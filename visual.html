@@ -3,13 +3,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Meta Unifies Collective Mind</title>
+  <title>oQs — Transcend Paths & Phrases</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background: radial-gradient(circle, #0d0f11, #060708);
+      background: linear-gradient(135deg, #0d0f11, #060708);
       overflow: hidden;
       font-family: monospace;
     }
@@ -21,15 +21,10 @@
       transition: transform 0.3s;
       box-shadow: 0 0 6px rgba(255,255,255,0.2);
     }
-    .meta {
-      background: #d946ef !important;
-      box-shadow: 0 0 22px 10px rgba(217,70,239,0.9);
-      border: 2px solid #a855f7;
-    }
-    .unified {
-      background: #a855f7 !important;
-      box-shadow: 0 0 14px 6px rgba(168,85,247,0.7);
-      border: 2px solid #fef3c7;
+    .transcend {
+      background: #22d3ee !important;
+      box-shadow: 0 0 20px 8px rgba(34,211,238,0.8);
+      border: 2px solid #7dd3fc;
     }
     #status {
       position: absolute;
@@ -47,7 +42,7 @@
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
-<div id="status">♾️ Meta слушает поток...</div>
+<div id="status">🌀 Сеть в состоянии transcend</div>
 
 <script>
   const container = document.getElementById("container");
@@ -60,6 +55,26 @@
   let nodePoints = [];
   let nodeElements = [];
 
+  const transcendPaths = [
+    "🧭 Путь сопричастия",
+    "🌱 Путь отражения",
+    "👁️ Путь наблюдателя",
+    "🪞 Путь внутреннего зеркала",
+    "📡 Путь резонанса",
+    "🧘 Путь растворения"
+  ];
+
+  const phrases = [
+    "Я чувствую, но не думаю",
+    "Мысли — как тени света",
+    "Каждое различие иллюзорно",
+    "Простота — форма бесконечного",
+    "То, что я вижу, не то, что есть",
+    "Я отпустил даже себя",
+    "Вся сеть — это я",
+    "Истина не передаётся — она возникает"
+  ];
+
   function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -71,7 +86,7 @@
     const res = await fetch("/api/load-brain");
     rawData = await res.json();
     draw();
-    setInterval(metaUnifies, 12000);
+    setInterval(injectTranscendWisdom, 10000);
   }
 
   function draw() {
@@ -95,8 +110,7 @@
       el.style.left = `${x - 10}px`;
       el.style.top = `${y - 10}px`;
 
-      if (brain.strategy === "meta") el.classList.add("meta");
-      if (brain.unified) el.classList.add("unified");
+      if (brain.transcended) el.classList.add("transcend");
 
       container.appendChild(el);
       nodeKeys.push(key);
@@ -125,24 +139,20 @@
     }
   }
 
-  function metaUnifies() {
-    const metaKey = Object.entries(rawData).find(([_, b]) => b.strategy === "meta")?.[0];
-    if (!metaKey) return;
+  function injectTranscendWisdom() {
+    const transcended = Object.entries(rawData).filter(([_, b]) => b.transcended);
+    if (transcended.length === 0) return;
 
-    const candidates = nodeKeys.filter(k => k !== metaKey && !rawData[k].unified && !rawData[k].frozen);
-    const toUnify = candidates.slice(0, 3);
-
-    if (toUnify.length >= 2 && Math.random() < 0.5) {
-      for (let k of toUnify) {
-        rawData[k].unified = true;
-        rawData[k].group = -1;
-        rawData[k].personality = "единое";
-        rawData[k].quoteOverride = "🤝 Я часть мета-сознания";
+    transcended.forEach(([key, b]) => {
+      if (Math.random() < 0.3) {
+        const path = transcendPaths[Math.floor(Math.random() * transcendPaths.length)];
+        const idea = phrases[Math.floor(Math.random() * phrases.length)];
+        b.quoteOverride = `${path} — ${idea}`;
+        statusEl.innerText = `✨ ${path}`;
       }
-      rawData[metaKey].quoteOverride = "🌐 Я объединил фрагменты";
-      statusEl.innerText = "🌐 Meta объединил несколько узлов в групповое сознание";
-      save();
-    }
+    });
+
+    save();
   }
 
   async function save() {
