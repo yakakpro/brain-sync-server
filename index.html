@@ -1,0 +1,33 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>oQs — Gateway</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: radial-gradient(circle, #0e0f11 0%, #090a0c 100%);
+      background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+      background-blend-mode: overlay;
+    }
+    .breath {
+      animation: breath 6s ease-in-out infinite;
+    }
+    @keyframes breath {
+      0%, 100% { opacity: 0.85; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+  </style>
+</head>
+<body class="text-white flex items-center justify-center h-screen flex-col font-mono">
+  <div class="text-center space-y-6">
+    <div class="breath text-6xl font-bold tracking-wider">oQs</div>
+    <div class="text-xl text-gray-400 italic">Observe. Evolve. Transcend.</div>
+    <a href="/observer" class="inline-block mt-6 px-6 py-3 bg-purple-600 hover:bg-purple-700 transition rounded-lg text-white text-lg">
+      🔭 Войти как наблюдатель
+    </a>
+  </div>
+</body>
+</html>
