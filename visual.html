@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Visual v3</title>
+  <title>oQs — Visual v4</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -31,13 +31,33 @@
       background: #111827;
       color: white;
       border: 1px solid #4b5563;
-      padding: 10px;
+      padding: 12px;
       border-radius: 8px;
       font-size: 14px;
       z-index: 100;
       display: none;
-      min-width: 180px;
+      min-width: 200px;
       box-shadow: 0 0 10px rgba(255,255,255,0.1);
+    }
+    select {
+      background: #1f2937;
+      color: white;
+      border: 1px solid #4b5563;
+      padding: 4px;
+      margin-top: 6px;
+      width: 100%;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 8px;
+      background: #4f46e5;
+      padding: 6px 10px;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #4338ca;
     }
   </style>
 </head>
@@ -65,13 +85,17 @@
     default: "#9ca3af"
   };
 
+  const STRATEGIES = Object.keys(COLORS);
   const params = new URLSearchParams(location.search);
   const netId = params.get("id") || "default";
   const container = document.getElementById("container");
   const canvas = document.getElementById("bg");
   const ctx = canvas.getContext("2d");
   const tooltip = document.getElementById("tooltip");
+
   let nodePoints = [];
+  let rawData = {};
+  let nodeKeys = [];
 
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -82,14 +106,15 @@
 
   async function load() {
     const res = await fetch("/api/load-brain?id=" + netId);
-    const data = await res.json();
-    const nodes = Object.entries(data);
+    rawData = await res.json();
+    const nodes = Object.entries(rawData);
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
     const radius = Math.min(centerX, centerY) - 80;
 
     container.innerHTML = "";
     nodePoints = [];
+    nodeKeys = [];
 
     nodes.forEach(([key, node], i) => {
       const angle = (2 * Math.PI * i) / nodes.length;
@@ -117,9 +142,13 @@
       el.onclick = (e) => {
         tooltip.innerHTML = `
           <div><b>🧠 ${node.name || "узел"}</b></div>
-          <div>💡 Стратегия: <span class="text-${color}">${node.strategy}</span></div>
           <div>🎭 Характер: ${node.personality}</div>
-          <div>🕊 Уровень мира: ${node.peaceMoments || 0}</div>
+          <div>🕊 Мир: ${node.peaceMoments || 0}</div>
+          <label class="block mt-2">💡 Стратегия:</label>
+          <select id="new-strategy">
+            ${STRATEGIES.map(s => `<option value="${s}" ${s === node.strategy ? 'selected' : ''}>${s}</option>`).join("")}
+          </select>
+          <button onclick="updateStrategy('${key}')">Изменить стратегию</button>
         `;
         tooltip.style.left = `${e.pageX + 15}px`;
         tooltip.style.top = `${e.pageY}px`;
@@ -128,9 +157,25 @@
 
       container.appendChild(el);
       nodePoints.push({ x, y });
+      nodeKeys.push(key);
     });
 
     drawConnections();
+  }
+
+  async function updateStrategy(key) {
+    const sel = document.getElementById("new-strategy");
+    const newStrategy = sel.value;
+    rawData[key].strategy = newStrategy;
+
+    await fetch("/api/save-brain?id=" + netId, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(rawData)
+    });
+
+    tooltip.style.display = "none";
+    load(); // перерисовка
   }
 
   function drawConnections() {
@@ -153,9 +198,8 @@
   }
 
   load();
-
   window.addEventListener("click", (e) => {
-    if (!e.target.classList.contains("node")) {
+    if (!e.target.closest(".node") && !e.target.closest("#tooltip")) {
       tooltip.style.display = "none";
     }
   });
