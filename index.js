@@ -36,3 +36,7 @@ app.get("/observer", (req, res) => {
 app.listen(PORT, () => {
   console.log(`🧠 noosync сервер работает на порту ${PORT}`);
 });
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
