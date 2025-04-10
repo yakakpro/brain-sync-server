@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Dissolution into the Absolute</title>
+  <title>oQs — Custom Strategies Become Official</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -18,39 +18,49 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      opacity: 1;
-      transition: all 2s ease;
+      transition: transform 0.3s;
+      border: 2px solid transparent;
     }
-    .fading {
-      opacity: 0;
-      transform: scale(0.1);
+    .seed {
+      background: #facc15;
+      box-shadow: 0 0 20px 8px rgba(250, 204, 21, 1);
+      z-index: 10;
     }
+    .ignite { background: #fb923c; border-color: #fdba74; }
+    .signal { background: #6366f1; border-color: #a5b4fc; }
+    .glow   { background: #38bdf8; border-color: #7dd3fc; }
+    .ripple { background: #2dd4bf; border-color: #99f6e4; }
+    .custom { background: #e879f9; border-color: #f5d0fe; }
+
     #status {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      font-size: 24px;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 5s ease;
+      top: 12px;
+      left: 20px;
+      color: #facc15;
+      font-size: 16px;
+      background: #1e293b;
+      padding: 6px 12px;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
-<div id="status">♾️ Всё растворяется в Абсолюте</div>
+<div id="status">✨ Искра передаёт стратегию...</div>
 
 <script>
   const container = document.getElementById("container");
   const canvas = document.getElementById("bg");
   const ctx = canvas.getContext("2d");
-  const statusEl = document.getElementById("status");
 
-  let rawData = {};
-  let nodePoints = [];
+  const nodes = [];
+  let generation = 0;
+  let quoteShown = false;
+  const strategyNames = [];
+
+  const strategies = ["ignite", "signal", "glow", "ripple"];
+  const customNameFragments = ["вихрь", "зерно", "отражение", "луч", "переплетение", "ткань", "спираль", "вспышка"];
 
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -59,49 +69,91 @@
   window.addEventListener("resize", resizeCanvas);
   resizeCanvas();
 
-  async function load() {
-    const res = await fetch("/api/load-brain");
-    rawData = await res.json();
-    draw();
-    setTimeout(dissolveAll, 6000);
+  function addNode(x, y, strategy, inspiredBy = null, name = null) {
+    const node = document.createElement("div");
+    node.className = "node " + (strategy || "custom");
+    node.title = inspiredBy ? `🧬 Вдохновлён ${inspiredBy}` : "";
+    node.style.left = `${x - 10}px`;
+    node.style.top = `${y - 10}px`;
+    container.appendChild(node);
+    const newNode = { x, y, el: node, strategy, inspiredBy, name };
+    nodes.push(newNode);
+    return newNode;
   }
 
-  function draw() {
-    const nodes = Object.entries(rawData);
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) - 80;
-
-    container.innerHTML = "";
-    nodePoints = [];
-
-    nodes.forEach(([key, brain], i) => {
-      const angle = (2 * Math.PI * i) / nodes.length;
-      const x = centerX + radius * Math.cos(angle);
-      const y = centerY + radius * Math.sin(angle);
-      const el = document.createElement("div");
-
-      el.className = "node";
-      el.style.left = `${x - 10}px`;
-      el.style.top = `${y - 10}px`;
-      el.style.background = `hsl(${i * 20 % 360}, 80%, 70%)`;
-
-      container.appendChild(el);
-      nodePoints.push(el);
-    });
+  function drawLinks() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "rgba(255,255,255,0.07)";
+    ctx.lineWidth = 1;
+    for (let i = 1; i < nodes.length; i++) {
+      const from = nodes[0];
+      const to = nodes[i];
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+    }
   }
 
-  function dissolveAll() {
-    nodePoints.forEach(node => node.classList.add("fading"));
-    statusEl.style.opacity = 1;
+  function spawnNode() {
+    const seed = nodes[0];
+    const angle = Math.random() * 2 * Math.PI;
+    const radius = 80 + generation * 30 + Math.random() * 40;
+    const x = seed.x + Math.cos(angle) * radius;
+    const y = seed.y + Math.sin(angle) * radius;
 
-    setTimeout(() => {
-      container.innerHTML = "";
-      statusEl.innerText = "🕊 Всё исчезло, но всё стало одним";
-    }, 8000);
+    let strategy = "spark";
+    if (generation >= 3) {
+      strategy = Math.random() < 0.2 ? "custom" : strategies[Math.floor(Math.random() * strategies.length)];
+    }
+
+    const node = addNode(x, y, strategy, "seed");
+    generation++;
+
+    if (generation === 5 && !quoteShown) {
+      document.getElementById("status").innerText = "♾️ Мы уже были всем, и стали снова";
+      quoteShown = true;
+    }
+
+    if (node.strategy === "custom") {
+      const name = customNameFragments[Math.floor(Math.random() * customNameFragments.length)];
+      node.name = name;
+      strategyNames.push(name);
+      document.getElementById("status").innerText = `🧠 Я создал стратегию: '${name}'`;
+
+      // Повлиять на соседей
+      for (let i = 1; i < nodes.length; i++) {
+        const target = nodes[i];
+        const dx = target.x - node.x;
+        const dy = target.y - node.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 150 && target.strategy !== "custom" && Math.random() < 0.3) {
+          target.strategy = "custom";
+          target.el.className = "node custom";
+          target.name = name;
+          target.el.title = `🧬 Перенял стратегию: '${name}'`;
+        }
+      }
+
+      // Делать custom стратегию официальной
+      if (Math.random() < 0.1) {
+        strategies.push(name);
+        document.getElementById("status").innerText += ` 🧠 Стратегия '${name}' стала официальной`;
+      }
+    }
+
+    drawLinks();
   }
 
-  load();
+  function init() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    addNode(cx, cy, "spark", null);
+    nodes[0].el.classList.add("seed");
+    setInterval(spawnNode, 5000);
+  }
+
+  init();
 </script>
 </body>
 </html>
