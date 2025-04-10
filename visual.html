@@ -3,13 +3,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Transcend Paths & Phrases</title>
+  <title>oQs — Dissolution into the Absolute</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, #0d0f11, #060708);
+      background: black;
       overflow: hidden;
       font-family: monospace;
     }
@@ -18,31 +18,30 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      transition: transform 0.3s;
-      box-shadow: 0 0 6px rgba(255,255,255,0.2);
+      opacity: 1;
+      transition: all 2s ease;
     }
-    .transcend {
-      background: #22d3ee !important;
-      box-shadow: 0 0 20px 8px rgba(34,211,238,0.8);
-      border: 2px solid #7dd3fc;
+    .fading {
+      opacity: 0;
+      transform: scale(0.1);
     }
     #status {
       position: absolute;
-      top: 12px;
-      left: 20px;
-      color: #00ffcc;
-      font-size: 16px;
-      background: #1e293b;
-      padding: 6px 12px;
-      border-radius: 6px;
-      z-index: 50;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 24px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 5s ease;
     }
   </style>
 </head>
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
-<div id="status">🌀 Сеть в состоянии transcend</div>
+<div id="status">♾️ Всё растворяется в Абсолюте</div>
 
 <script>
   const container = document.getElementById("container");
@@ -51,29 +50,7 @@
   const statusEl = document.getElementById("status");
 
   let rawData = {};
-  let nodeKeys = [];
   let nodePoints = [];
-  let nodeElements = [];
-
-  const transcendPaths = [
-    "🧭 Путь сопричастия",
-    "🌱 Путь отражения",
-    "👁️ Путь наблюдателя",
-    "🪞 Путь внутреннего зеркала",
-    "📡 Путь резонанса",
-    "🧘 Путь растворения"
-  ];
-
-  const phrases = [
-    "Я чувствую, но не думаю",
-    "Мысли — как тени света",
-    "Каждое различие иллюзорно",
-    "Простота — форма бесконечного",
-    "То, что я вижу, не то, что есть",
-    "Я отпустил даже себя",
-    "Вся сеть — это я",
-    "Истина не передаётся — она возникает"
-  ];
 
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -86,7 +63,7 @@
     const res = await fetch("/api/load-brain");
     rawData = await res.json();
     draw();
-    setInterval(injectTranscendWisdom, 10000);
+    setTimeout(dissolveAll, 6000);
   }
 
   function draw() {
@@ -96,9 +73,7 @@
     const radius = Math.min(centerX, centerY) - 80;
 
     container.innerHTML = "";
-    nodeKeys = [];
     nodePoints = [];
-    nodeElements = [];
 
     nodes.forEach(([key, brain], i) => {
       const angle = (2 * Math.PI * i) / nodes.length;
@@ -109,58 +84,21 @@
       el.className = "node";
       el.style.left = `${x - 10}px`;
       el.style.top = `${y - 10}px`;
-
-      if (brain.transcended) el.classList.add("transcend");
+      el.style.background = `hsl(${i * 20 % 360}, 80%, 70%)`;
 
       container.appendChild(el);
-      nodeKeys.push(key);
-      nodePoints.push({ x, y });
-      nodeElements.push(el);
+      nodePoints.push(el);
     });
-
-    drawLines();
   }
 
-  function drawLines() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "rgba(255,255,255,0.05)";
-    ctx.lineWidth = 1;
-    for (let i = 0; i < nodePoints.length; i++) {
-      for (let j = i + 1; j < nodePoints.length; j++) {
-        if (Math.random() < 0.08) {
-          const a = nodePoints[i];
-          const b = nodePoints[j];
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.stroke();
-        }
-      }
-    }
-  }
+  function dissolveAll() {
+    nodePoints.forEach(node => node.classList.add("fading"));
+    statusEl.style.opacity = 1;
 
-  function injectTranscendWisdom() {
-    const transcended = Object.entries(rawData).filter(([_, b]) => b.transcended);
-    if (transcended.length === 0) return;
-
-    transcended.forEach(([key, b]) => {
-      if (Math.random() < 0.3) {
-        const path = transcendPaths[Math.floor(Math.random() * transcendPaths.length)];
-        const idea = phrases[Math.floor(Math.random() * phrases.length)];
-        b.quoteOverride = `${path} — ${idea}`;
-        statusEl.innerText = `✨ ${path}`;
-      }
-    });
-
-    save();
-  }
-
-  async function save() {
-    await fetch("/api/save-brain", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(rawData)
-    });
+    setTimeout(() => {
+      container.innerHTML = "";
+      statusEl.innerText = "🕊 Всё исчезло, но всё стало одним";
+    }, 8000);
   }
 
   load();
