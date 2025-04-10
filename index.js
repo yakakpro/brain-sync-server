@@ -1,7 +1,7 @@
-const path = require("path"); // если ещё не добавлено в начале файла
 const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,20 +27,19 @@ app.post("/api/save-brain", (req, res) => {
     res.status(500).json({ error: "failed to save" });
   }
 });
-const path = require("path");
-
-app.get("/observer", (req, res) => {
-  res.sendFile(path.join(__dirname, "observer.html"));
-});
-
-app.listen(PORT, () => {
-  console.log(`🧠 noosync сервер работает на порту ${PORT}`);
-});
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+app.get("/observer", (req, res) => {
+  res.sendFile(path.join(__dirname, "observer.html"));
+});
+
 app.get("/join", (req, res) => {
   res.sendFile(path.join(__dirname, "join.html"));
+});
+
+app.listen(PORT, () => {
+  console.log(`🧠 noosync сервер работает на порту ${PORT}`);
 });
