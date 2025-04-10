@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Visual v2</title>
+  <title>oQs — Visual v3</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -20,16 +20,31 @@
       border-radius: 50%;
       transition: transform 0.3s;
       box-shadow: 0 0 6px rgba(255,255,255,0.2);
+      cursor: pointer;
     }
     .node:hover {
       transform: scale(1.5);
       z-index: 10;
+    }
+    #tooltip {
+      position: absolute;
+      background: #111827;
+      color: white;
+      border: 1px solid #4b5563;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 100;
+      display: none;
+      min-width: 180px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.1);
     }
   </style>
 </head>
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
+<div id="tooltip"></div>
 
 <script>
   const COLORS = {
@@ -55,7 +70,7 @@
   const container = document.getElementById("container");
   const canvas = document.getElementById("bg");
   const ctx = canvas.getContext("2d");
-
+  const tooltip = document.getElementById("tooltip");
   let nodePoints = [];
 
   function resizeCanvas() {
@@ -68,7 +83,7 @@
   async function load() {
     const res = await fetch("/api/load-brain?id=" + netId);
     const data = await res.json();
-    const nodes = Object.values(data);
+    const nodes = Object.entries(data);
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
     const radius = Math.min(centerX, centerY) - 80;
@@ -76,7 +91,7 @@
     container.innerHTML = "";
     nodePoints = [];
 
-    nodes.forEach((node, i) => {
+    nodes.forEach(([key, node], i) => {
       const angle = (2 * Math.PI * i) / nodes.length;
       const x = centerX + radius * Math.cos(angle);
       const y = centerY + radius * Math.sin(angle);
@@ -89,7 +104,6 @@
       el.style.left = `${x - 10}px`;
       el.style.top = `${y - 10}px`;
       el.style.animation = `pulse-${i} ${(6 - Math.min(peace, 5)) + 1}s ease-in-out infinite`;
-      el.title = `${node.name || "узел"}\n💡 ${node.strategy}\n🧠 ${node.personality}`;
 
       const style = document.createElement("style");
       style.innerHTML = `
@@ -99,6 +113,18 @@
         }
       `;
       document.head.appendChild(style);
+
+      el.onclick = (e) => {
+        tooltip.innerHTML = `
+          <div><b>🧠 ${node.name || "узел"}</b></div>
+          <div>💡 Стратегия: <span class="text-${color}">${node.strategy}</span></div>
+          <div>🎭 Характер: ${node.personality}</div>
+          <div>🕊 Уровень мира: ${node.peaceMoments || 0}</div>
+        `;
+        tooltip.style.left = `${e.pageX + 15}px`;
+        tooltip.style.top = `${e.pageY}px`;
+        tooltip.style.display = "block";
+      };
 
       container.appendChild(el);
       nodePoints.push({ x, y });
@@ -127,6 +153,12 @@
   }
 
   load();
+
+  window.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("node")) {
+      tooltip.style.display = "none";
+    }
+  });
 </script>
 </body>
 </html>
