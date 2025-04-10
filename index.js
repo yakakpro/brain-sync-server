@@ -1,3 +1,4 @@
+
 const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
@@ -5,14 +6,19 @@ const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const FILE = "./db.json";
 
 app.use(cors());
 app.use(express.json());
 
+function getFilePath(req) {
+  const id = req.query.id || "default";
+  return `./brains/${id}.json`;
+}
+
 app.get("/api/load-brain", (req, res) => {
+  const file = getFilePath(req);
   try {
-    const data = fs.readFileSync(FILE, "utf-8");
+    const data = fs.readFileSync(file, "utf-8");
     res.json(JSON.parse(data));
   } catch {
     res.json({});
@@ -20,8 +26,10 @@ app.get("/api/load-brain", (req, res) => {
 });
 
 app.post("/api/save-brain", (req, res) => {
+  const file = getFilePath(req);
   try {
-    fs.writeFileSync(FILE, JSON.stringify(req.body, null, 2));
+    fs.mkdirSync("./brains", { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(req.body, null, 2));
     res.json({ status: "ok" });
   } catch {
     res.status(500).json({ error: "failed to save" });
@@ -41,5 +49,5 @@ app.get("/join", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🧠 noosync сервер работает на порту ${PORT}`);
+  console.log(`🧠 oQs multi-user server running on port ${PORT}`);
 });
