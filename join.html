@@ -38,13 +38,16 @@
   </div>
 
   <script>
+    const params = new URLSearchParams(window.location.search);
+    const netId = params.get("id") || "default";
+
     async function joinNetwork() {
       const name = document.getElementById("nodeName").value.trim();
       const personality = document.getElementById("personality").value;
       if (!name) return alert("Введи имя или ID");
 
       try {
-        const res = await fetch("/api/load-brain");
+        const res = await fetch("/api/load-brain?id=" + netId);
         const brain = await res.json();
         const id = Math.floor(Math.random() * 10000);
         brain[id] = {
@@ -59,14 +62,14 @@
           peaceMoments: 0
         };
 
-        await fetch("/api/save-brain", {
+        await fetch("/api/save-brain?id=" + netId, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(brain)
         });
 
         document.getElementById("result").textContent = "✅ Ты теперь часть oQs!";
-        setTimeout(() => window.location.href = "/observer", 1500);
+        setTimeout(() => window.location.href = "/observer?id=" + netId, 1500);
       } catch (e) {
         alert("⚠️ Ошибка подключения к сети");
       }
