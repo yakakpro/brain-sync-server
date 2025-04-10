@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Inspiration Mode</title>
+  <title>oQs — Observer Mode</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -26,37 +26,45 @@
       transform: scale(1.5);
       z-index: 10;
     }
-    #tooltip {
+    .highlight {
+      animation: observer-glow 2s infinite;
+    }
+    @keyframes observer-glow {
+      0%, 100% { box-shadow: 0 0 6px 2px rgba(255,255,255,0.2); }
+      50% { box-shadow: 0 0 12px 4px rgba(255,255,255,0.5); }
+    }
+    .observer-panel {
       position: absolute;
-      background: #111827;
+      bottom: 20px;
+      left: 20px;
+      background: #1e293b;
       color: white;
-      border: 1px solid #4b5563;
-      padding: 12px;
+      padding: 10px 16px;
       border-radius: 8px;
       font-size: 14px;
-      z-index: 100;
-      display: none;
-      min-width: 200px;
-      box-shadow: 0 0 10px rgba(255,255,255,0.1);
+      z-index: 50;
+      box-shadow: 0 0 8px rgba(255,255,255,0.1);
     }
-    select, button {
-      margin-top: 8px;
+    .observer-panel button {
+      background: #334155;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-top: 6px;
+      font-size: 13px;
     }
-    .inspired {
-      box-shadow: 0 0 12px 4px rgba(255, 255, 255, 0.3) !important;
-      animation: inspire 1s ease-out;
-    }
-    @keyframes inspire {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.4); }
-      100% { transform: scale(1); }
+    .observer-panel button:hover {
+      background: #475569;
     }
   </style>
 </head>
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
-<div id="tooltip"></div>
+<div class="observer-panel hidden" id="observerPanel">
+  <div id="obsText">👁 Наблюдение: —</div>
+  <button onclick="observe()">🎲 Обновить наблюдение</button>
+</div>
 
 <script>
   const COLORS = {
@@ -77,18 +85,18 @@
     default: "#9ca3af"
   };
 
-  const STRATEGIES = Object.keys(COLORS);
   const params = new URLSearchParams(location.search);
   const netId = params.get("id") || "default";
   const container = document.getElementById("container");
   const canvas = document.getElementById("bg");
   const ctx = canvas.getContext("2d");
-  const tooltip = document.getElementById("tooltip");
+  const observerPanel = document.getElementById("observerPanel");
+  const obsText = document.getElementById("obsText");
 
   let nodePoints = [];
   let rawData = {};
   let nodeKeys = [];
-  let sourceKey = null;
+  let nodeElements = [];
 
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -108,75 +116,30 @@
     container.innerHTML = "";
     nodePoints = [];
     nodeKeys = [];
+    nodeElements = [];
 
     nodes.forEach(([key, node], i) => {
       const angle = (2 * Math.PI * i) / nodes.length;
       const x = centerX + radius * Math.cos(angle);
       const y = centerY + radius * Math.sin(angle);
       const color = COLORS[node.strategy] || COLORS.default;
-      const peace = node.peaceMoments || 0;
 
       const el = document.createElement("div");
       el.className = "node";
       el.style.background = color;
       el.style.left = `${x - 10}px`;
       el.style.top = `${y - 10}px`;
-      el.style.animation = `pulse-${i} ${(6 - Math.min(peace, 5)) + 1}s ease-in-out infinite`;
       el.dataset.key = key;
-
-      const style = document.createElement("style");
-      style.innerHTML = `
-        @keyframes pulse-${i} {
-          0%, 100% { box-shadow: 0 0 6px ${color}; }
-          50% { box-shadow: 0 0 14px ${color}; }
-        }
-      `;
-      document.head.appendChild(style);
-
-      el.onclick = (e) => {
-        if (!sourceKey) {
-          sourceKey = key;
-          tooltip.innerHTML = `
-            <div><b>🧠 ${node.name || "узел"}</b></div>
-            <div>💡 Стратегия: ${node.strategy}</div>
-            <div class="mt-2 text-green-400">✅ Источник выбран. Теперь нажми на другого, чтобы вдохновить его</div>
-          `;
-        } else if (key !== sourceKey) {
-          const sourceStrategy = rawData[sourceKey].strategy;
-          rawData[key].strategy = sourceStrategy;
-          rawData[key].quoteOverride = "🌟 Я вдохновился";
-
-          tooltip.innerHTML = `
-            <div><b>🧠 ${node.name || "узел"}</b></div>
-            <div>🌟 Он принял стратегию: <b>${sourceStrategy}</b></div>
-          `;
-
-          saveAndReload(key);
-        }
-        tooltip.style.left = `${e.pageX + 15}px`;
-        tooltip.style.top = `${e.pageY}px`;
-        tooltip.style.display = "block";
-      };
 
       container.appendChild(el);
       nodePoints.push({ x, y });
       nodeKeys.push(key);
+      nodeElements.push(el);
     });
 
     drawConnections();
-  }
-
-  async function saveAndReload(updatedKey) {
-    await fetch("/api/save-brain?id=" + netId, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(rawData)
-    });
-    sourceKey = null;
-    setTimeout(() => {
-      document.querySelector(`[data-key='${updatedKey}']`)?.classList.add("inspired");
-    }, 100);
-    load();
+    observerPanel.classList.remove("hidden");
+    observe();
   }
 
   function drawConnections() {
@@ -197,12 +160,24 @@
     }
   }
 
+  function observe() {
+    nodeElements.forEach(el => el.classList.remove("highlight"));
+    const randomIndex = Math.floor(Math.random() * nodeKeys.length);
+    const refKey = nodeKeys[randomIndex];
+    const refNode = rawData[refKey];
+    const type = Math.random() < 0.5 ? "strategy" : "personality";
+    const refValue = refNode[type];
+
+    nodeKeys.forEach((k, i) => {
+      if (rawData[k][type] === refValue) {
+        nodeElements[i].classList.add("highlight");
+      }
+    });
+
+    obsText.innerText = `👁 Наблюдение: ${type === "strategy" ? "Стратегия" : "Характер"} — ${refValue}`;
+  }
+
   load();
-  window.addEventListener("click", (e) => {
-    if (!e.target.closest(".node") && !e.target.closest("#tooltip")) {
-      tooltip.style.display = "none";
-    }
-  });
 </script>
 </body>
 </html>
