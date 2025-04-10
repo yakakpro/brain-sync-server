@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Co-emergence Mode</title>
+  <title>oQs — Collective Harmony</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -20,21 +20,31 @@
       border-radius: 50%;
       transition: transform 0.3s;
       box-shadow: 0 0 6px rgba(255,255,255,0.2);
-      cursor: pointer;
     }
-    .flash {
-      animation: mutual-flash 1.2s ease-in-out;
+    .harmonized {
+      animation: harmony-flash 3s ease-in-out infinite;
     }
-    @keyframes mutual-flash {
-      0% { box-shadow: 0 0 4px 2px rgba(255,255,255,0.2); }
-      50% { box-shadow: 0 0 14px 6px rgba(255,255,255,0.7); }
-      100% { box-shadow: 0 0 4px 2px rgba(255,255,255,0.2); }
+    @keyframes harmony-flash {
+      0%, 100% { box-shadow: 0 0 8px 2px rgba(0,255,200,0.3); }
+      50% { box-shadow: 0 0 20px 6px rgba(0,255,200,0.8); }
+    }
+    #status {
+      position: absolute;
+      top: 12px;
+      left: 20px;
+      color: #00ffcc;
+      font-size: 16px;
+      background: #1e293b;
+      padding: 6px 12px;
+      border-radius: 6px;
+      z-index: 50;
     }
   </style>
 </head>
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
+<div id="status">🧠 Наблюдение сети...</div>
 
 <script>
   const COLORS = {
@@ -58,6 +68,7 @@
   const container = document.getElementById("container");
   const canvas = document.getElementById("bg");
   const ctx = canvas.getContext("2d");
+  const statusEl = document.getElementById("status");
 
   let nodePoints = [];
   let rawData = {};
@@ -104,7 +115,8 @@
     });
 
     drawConnections();
-    coEmergenceLoop();
+    checkHarmony();
+    setInterval(checkHarmony, 15000);
   }
 
   function drawConnections() {
@@ -113,7 +125,7 @@
     ctx.lineWidth = 1;
     for (let i = 0; i < nodePoints.length; i++) {
       for (let j = i + 1; j < nodePoints.length; j++) {
-        if (Math.random() < 0.08) {
+        if (Math.random() < 0.07) {
           const a = nodePoints[i];
           const b = nodePoints[j];
           ctx.beginPath();
@@ -125,42 +137,40 @@
     }
   }
 
-  function coEmergenceLoop() {
-    setInterval(() => {
-      for (let i = 0; i < nodeKeys.length; i++) {
-        for (let j = i + 1; j < nodeKeys.length; j++) {
-          const a = rawData[nodeKeys[i]];
-          const b = rawData[nodeKeys[j]];
-          const dist = Math.hypot(
-            nodePoints[i].x - nodePoints[j].x,
-            nodePoints[i].y - nodePoints[j].y
-          );
-          if (dist < 140 && Math.random() < 0.25) {
-            const mixedStrategy = mixStrategies(a.strategy, b.strategy);
-            const mixedPersona = mixPersonalities(a.personality, b.personality);
-            a.strategy = mixedStrategy;
-            b.strategy = mixedStrategy;
-            a.personality = mixedPersona;
-            b.personality = mixedPersona;
-            a.quoteOverride = "🤝 Я чувствую, как мы влияем друг на друга";
-            b.quoteOverride = "🤝 Я чувствую, как мы влияем друг на друга";
-            nodeElements[i].classList.add("flash");
-            nodeElements[j].classList.add("flash");
-          }
-        }
+  function checkHarmony() {
+    const total = nodeKeys.length;
+    let peaceful = 0;
+    let byStrategy = {};
+    let byPersonality = {};
+
+    for (let key of nodeKeys) {
+      const brain = rawData[key];
+      if ((brain.peaceMoments || 0) >= 5) peaceful++;
+      byStrategy[brain.strategy] = (byStrategy[brain.strategy] || 0) + 1;
+      byPersonality[brain.personality] = (byPersonality[brain.personality] || 0) + 1;
+    }
+
+    const topStrategy = Math.max(...Object.values(byStrategy));
+    const topPersonality = Math.max(...Object.values(byPersonality));
+    const harmonyRatio = Math.max(peaceful, topStrategy, topPersonality) / total;
+
+    if (harmonyRatio >= 0.7) {
+      for (let i = 0; i < nodeElements.length; i++) {
+        nodeElements[i].classList.add("harmonized");
+        rawData[nodeKeys[i]].frozen = true;
+        rawData[nodeKeys[i]].quoteOverride = "🌐 Я чувствую сеть";
       }
-      save();
-    }, 12000);
-  }
-
-  function mixStrategies(s1, s2) {
-    if (s1 === s2) return s1;
-    return (s1 + "+" + s2).slice(0, 12);
-  }
-
-  function mixPersonalities(p1, p2) {
-    if (p1 === p2) return p1;
-    return Math.random() < 0.5 ? p1 : p2;
+      statusEl.innerText = "🌌 Гармония достигнута";
+      setTimeout(() => {
+        for (let i = 0; i < nodeElements.length; i++) {
+          nodeElements[i].classList.remove("harmonized");
+          rawData[nodeKeys[i]].frozen = false;
+        }
+        statusEl.innerText = "🧠 Наблюдение сети...";
+        rawData.__COLLECTIVE_HARMONY__ = true;
+        save();
+      }, 30000);
+    }
   }
 
   async function save() {
