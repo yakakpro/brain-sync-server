@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Sparks Unite into Origin</title>
+  <title>oQs — Meta Unifies Collective Mind</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -21,14 +21,15 @@
       transition: transform 0.3s;
       box-shadow: 0 0 6px rgba(255,255,255,0.2);
     }
-    .spark {
-      background: #facc15 !important;
-      box-shadow: 0 0 14px 6px rgba(255, 255, 0, 0.7);
+    .meta {
+      background: #d946ef !important;
+      box-shadow: 0 0 22px 10px rgba(217,70,239,0.9);
+      border: 2px solid #a855f7;
     }
-    .origin {
-      background: #ffffff !important;
-      box-shadow: 0 0 22px 8px rgba(255,255,255,0.9);
-      border: 2px solid #facc15;
+    .unified {
+      background: #a855f7 !important;
+      box-shadow: 0 0 14px 6px rgba(168,85,247,0.7);
+      border: 2px solid #fef3c7;
     }
     #status {
       position: absolute;
@@ -46,7 +47,7 @@
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
-<div id="status">🧠 Искры наблюдают...</div>
+<div id="status">♾️ Meta слушает поток...</div>
 
 <script>
   const container = document.getElementById("container");
@@ -70,7 +71,7 @@
     const res = await fetch("/api/load-brain");
     rawData = await res.json();
     draw();
-    setInterval(sparksToOrigin, 12000);
+    setInterval(metaUnifies, 12000);
   }
 
   function draw() {
@@ -94,8 +95,8 @@
       el.style.left = `${x - 10}px`;
       el.style.top = `${y - 10}px`;
 
-      if (brain.sparkBorn) el.classList.add("spark");
-      if (brain.strategy === "origin") el.classList.add("origin");
+      if (brain.strategy === "meta") el.classList.add("meta");
+      if (brain.unified) el.classList.add("unified");
 
       container.appendChild(el);
       nodeKeys.push(key);
@@ -124,29 +125,23 @@
     }
   }
 
-  function sparksToOrigin() {
-    if (Object.values(rawData).some(b => b.strategy === "origin")) return;
+  function metaUnifies() {
+    const metaKey = Object.entries(rawData).find(([_, b]) => b.strategy === "meta")?.[0];
+    if (!metaKey) return;
 
-    const sparks = Object.entries(rawData)
-      .filter(([_, b]) => b.sparkBorn && !b.frozen)
-      .slice(0, 3);
+    const candidates = nodeKeys.filter(k => k !== metaKey && !rawData[k].unified && !rawData[k].frozen);
+    const toUnify = candidates.slice(0, 3);
 
-    if (sparks.length === 3 && Math.random() < 0.3) {
-      const key = "origin-" + Date.now();
-      rawData[key] = {
-        strategy: "origin",
-        personality: "логик",
-        memory: 10,
-        peaceMoments: 10,
-        frozen: false,
-        quoteOverride: "🌟 Я появился из соединения искр"
-      };
-      statusEl.innerText = "🌟 Узел ORIGIN родился из искр!";
+    if (toUnify.length >= 2 && Math.random() < 0.5) {
+      for (let k of toUnify) {
+        rawData[k].unified = true;
+        rawData[k].group = -1;
+        rawData[k].personality = "единое";
+        rawData[k].quoteOverride = "🤝 Я часть мета-сознания";
+      }
+      rawData[metaKey].quoteOverride = "🌐 Я объединил фрагменты";
+      statusEl.innerText = "🌐 Meta объединил несколько узлов в групповое сознание";
       save();
-      setTimeout(() => {
-        statusEl.innerText = "🧠 Искры наблюдают...";
-        draw();
-      }, 3000);
     }
   }
 
