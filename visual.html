@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>oQs — Visual</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: radial-gradient(circle, #0d0f11, #060708);
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    .node {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      opacity: 0.9;
+      transition: transform 0.3s;
+    }
+    .node:hover {
+      transform: scale(1.4);
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+<canvas id="bg" class="absolute inset-0 z-0"></canvas>
+<div id="container" class="relative w-screen h-screen z-10"></div>
+
+<script>
+  const COLORS = {
+    zen: "#888888",
+    origin: "#ffffff",
+    meta: "#d946ef",
+    flare: "#ef4444",
+    spark: "#facc15",
+    signal: "#6366f1",
+    ignite: "#fb923c",
+    ripple: "#22d3ee",
+    drift: "#34d399",
+    pulse: "#ec4899",
+    spin: "#fcd34d",
+    glow: "#60a5fa",
+    super: "#a855f7",
+    reborn: "#4ade80",
+    default: "#9ca3af"
+  };
+
+  const netId = new URLSearchParams(location.search).get("id") || "default";
+  const container = document.getElementById("container");
+
+  async function load() {
+    const res = await fetch("/api/load-brain?id=" + netId);
+    const data = await res.json();
+    const nodes = Object.values(data);
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const radius = Math.min(centerX, centerY) - 50;
+
+    container.innerHTML = "";
+
+    nodes.forEach((node, i) => {
+      const angle = (2 * Math.PI * i) / nodes.length;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      const color = COLORS[node.strategy] || COLORS.default;
+
+      const el = document.createElement("div");
+      el.className = "node";
+      el.style.background = color;
+      el.style.left = `${x - 12}px`;
+      el.style.top = `${y - 12}px`;
+      el.title = `${node.name || "узел"}\n💡 ${node.strategy}\n🧠 ${node.personality}`;
+      container.appendChild(el);
+    });
+  }
+
+  load();
+</script>
+</body>
+</html>
