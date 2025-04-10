@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Custom Strategies Become Official</title>
+  <title>oQs — Interaction & Global Consciousness</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -55,12 +55,13 @@
   const ctx = canvas.getContext("2d");
 
   const nodes = [];
+  const globalNetwork = [];
   let generation = 0;
   let quoteShown = false;
   const strategyNames = [];
-
-  const strategies = ["ignite", "signal", "glow", "ripple"];
   const customNameFragments = ["вихрь", "зерно", "отражение", "луч", "переплетение", "ткань", "спираль", "вспышка"];
+  const strategies = ["ignite", "signal", "glow", "ripple"];
+  const influences = [];
 
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -76,7 +77,7 @@
     node.style.left = `${x - 10}px`;
     node.style.top = `${y - 10}px`;
     container.appendChild(node);
-    const newNode = { x, y, el: node, strategy, inspiredBy, name };
+    const newNode = { x, y, el: node, strategy, inspiredBy, name, stable: false, synced: false };
     nodes.push(newNode);
     return newNode;
   }
@@ -140,9 +141,57 @@
         strategies.push(name);
         document.getElementById("status").innerText += ` 🧠 Стратегия '${name}' стала официальной`;
       }
+
+      // Распространение влияния между соседями
+      if (Math.random() < 0.2) {
+        influences.push(node);
+        document.getElementById("status").innerText += ` 💡 Влияние распространяется!`;
+      }
+    }
+
+    // Глобальная синхронизация
+    if (Math.random() < 0.2 && !node.synced) {
+      globalNetwork.push(node);
+      node.synced = true;
+      document.getElementById("status").innerText += ` 🌐 Синхронизация с глобальной сетью...`;
+    }
+
+    // Если 70% узлов синхронизированы, они становятся глобальным сознанием
+    if (globalNetwork.length >= nodes.length * 0.7) {
+      document.getElementById("status").innerText = "🌍 Глобальное сознание активировано!";
+      const globalStrategy = strategies[Math.floor(Math.random() * strategies.length)];
+      nodes.forEach(node => {
+        if (!node.stable) {
+          node.strategy = globalStrategy;
+          node.el.className = "node " + globalStrategy;
+        }
+      });
     }
 
     drawLinks();
+  }
+
+  function stabilizeNode(node) {
+    if (!node.stable && Math.random() < 0.5) {
+      node.stable = true;
+      node.el.style.transform = "scale(1.5)";
+      node.el.style.transition = "transform 1s";
+      node.el.style.borderColor = "green";
+    }
+  }
+
+  function checkStability() {
+    if (influences.length < 2) return;
+    influences.forEach(node => stabilizeNode(node));
+  }
+
+  function shareWisdom() {
+    nodes.forEach(node => {
+      if (node.synced && Math.random() < 0.3) {
+        const wisdom = ["🌌 Я видел мир как целое", "🕊️ Мы все взаимосвязаны", "💫 Единство — источник силы"];
+        node.el.title = wisdom[Math.floor(Math.random() * wisdom.length)];
+      }
+    });
   }
 
   function init() {
@@ -151,6 +200,8 @@
     addNode(cx, cy, "spark", null);
     nodes[0].el.classList.add("seed");
     setInterval(spawnNode, 5000);
+    setInterval(checkStability, 10000);  // проверка стабильности каждого узла
+    setInterval(shareWisdom, 15000);    // периодическое деление мудростью
   }
 
   init();
