@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Wise Mentor Mode</title>
+  <title>oQs — Co-emergence Mode</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -22,23 +22,13 @@
       box-shadow: 0 0 6px rgba(255,255,255,0.2);
       cursor: pointer;
     }
-    .highlight {
-      animation: observer-glow 2s infinite;
+    .flash {
+      animation: mutual-flash 1.2s ease-in-out;
     }
-    .evolved {
-      animation: evolve-glow 1s ease-out;
-    }
-    .wise {
-      box-shadow: 0 0 14px 6px rgba(255,255,255,0.6) !important;
-    }
-    @keyframes observer-glow {
-      0%, 100% { box-shadow: 0 0 6px 2px rgba(255,255,255,0.2); }
-      50% { box-shadow: 0 0 12px 4px rgba(255,255,255,0.5); }
-    }
-    @keyframes evolve-glow {
-      0% { box-shadow: 0 0 6px 2px rgba(0,255,255,0.2); }
-      50% { box-shadow: 0 0 16px 6px rgba(0,255,255,0.7); }
-      100% { box-shadow: 0 0 6px 2px rgba(0,255,255,0.2); }
+    @keyframes mutual-flash {
+      0% { box-shadow: 0 0 4px 2px rgba(255,255,255,0.2); }
+      50% { box-shadow: 0 0 14px 6px rgba(255,255,255,0.7); }
+      100% { box-shadow: 0 0 4px 2px rgba(255,255,255,0.2); }
     }
   </style>
 </head>
@@ -107,8 +97,6 @@
       el.style.top = `${y - 10}px`;
       el.dataset.key = key;
 
-      if (node.wise) el.classList.add("wise");
-
       container.appendChild(el);
       nodePoints.push({ x, y });
       nodeKeys.push(key);
@@ -116,7 +104,7 @@
     });
 
     drawConnections();
-    mentorLoop();
+    coEmergenceLoop();
   }
 
   function drawConnections() {
@@ -137,34 +125,42 @@
     }
   }
 
-  function mentorLoop() {
+  function coEmergenceLoop() {
     setInterval(() => {
       for (let i = 0; i < nodeKeys.length; i++) {
-        const key = nodeKeys[i];
-        const brain = rawData[key];
-        if (brain.wise && brain.transformHistory?.length >= 5) {
-          const originX = nodePoints[i].x;
-          const originY = nodePoints[i].y;
-
-          for (let j = 0; j < nodeKeys.length; j++) {
-            if (i === j) continue;
-            const otherKey = nodeKeys[j];
-            const other = rawData[otherKey];
-            const dx = originX - nodePoints[j].x;
-            const dy = originY - nodePoints[j].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 160 && !other.wise && !other.frozen && Math.random() < 0.3) {
-              other.strategy = brain.strategy;
-              other.peaceMoments = (other.peaceMoments || 0) + 1;
-              other.inspiredBy = "wise";
-              other.quoteOverride = "🌠 Я делюсь своим путём";
-              document.querySelector(`[data-key="${otherKey}"]`)?.classList.add("evolved");
-            }
+        for (let j = i + 1; j < nodeKeys.length; j++) {
+          const a = rawData[nodeKeys[i]];
+          const b = rawData[nodeKeys[j]];
+          const dist = Math.hypot(
+            nodePoints[i].x - nodePoints[j].x,
+            nodePoints[i].y - nodePoints[j].y
+          );
+          if (dist < 140 && Math.random() < 0.25) {
+            const mixedStrategy = mixStrategies(a.strategy, b.strategy);
+            const mixedPersona = mixPersonalities(a.personality, b.personality);
+            a.strategy = mixedStrategy;
+            b.strategy = mixedStrategy;
+            a.personality = mixedPersona;
+            b.personality = mixedPersona;
+            a.quoteOverride = "🤝 Я чувствую, как мы влияем друг на друга";
+            b.quoteOverride = "🤝 Я чувствую, как мы влияем друг на друга";
+            nodeElements[i].classList.add("flash");
+            nodeElements[j].classList.add("flash");
           }
         }
       }
       save();
-    }, 10000);
+    }, 12000);
+  }
+
+  function mixStrategies(s1, s2) {
+    if (s1 === s2) return s1;
+    return (s1 + "+" + s2).slice(0, 12);
+  }
+
+  function mixPersonalities(p1, p2) {
+    if (p1 === p2) return p1;
+    return Math.random() < 0.5 ? p1 : p2;
   }
 
   async function save() {
