@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Sparks After Phase</title>
+  <title>oQs — Sparks Can Trigger Phase</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -21,17 +21,9 @@
       transition: transform 0.3s;
       box-shadow: 0 0 6px rgba(255,255,255,0.2);
     }
-    .flashing {
-      animation: glow-flash 1.4s ease-in-out;
-    }
     .spark {
-      box-shadow: 0 0 12px 4px rgba(255,255,255,0.9);
       background: #facc15 !important;
-    }
-    @keyframes glow-flash {
-      0% { box-shadow: 0 0 6px 2px rgba(255,255,255,0.2); }
-      50% { box-shadow: 0 0 18px 6px rgba(255,255,255,0.8); }
-      100% { box-shadow: 0 0 6px 2px rgba(255,255,255,0.2); }
+      box-shadow: 0 0 14px 6px rgba(255, 255, 0, 0.7);
     }
     #status {
       position: absolute;
@@ -49,27 +41,10 @@
 <body>
 <canvas id="bg" class="absolute inset-0 z-0"></canvas>
 <div id="container" class="relative w-screen h-screen z-10"></div>
-<div id="status">🧠 Активная фаза...</div>
+<div id="status">🧠 Ожидание искры...</div>
 
 <script>
-  const COLORS = {
-    zen: "#888888",
-    origin: "#ffffff",
-    meta: "#d946ef",
-    flare: "#ef4444",
-    spark: "#facc15",
-    signal: "#6366f1",
-    ignite: "#fb923c",
-    ripple: "#22d3ee",
-    drift: "#34d399",
-    pulse: "#ec4899",
-    spin: "#fcd34d",
-    glow: "#60a5fa",
-    super: "#a855f7",
-    reborn: "#4ade80",
-    default: "#9ca3af"
-  };
-
+  const PHASES = ["🌱 Созидание", "🚀 Путешествие", "🧬 Исследование"];
   const container = document.getElementById("container");
   const canvas = document.getElementById("bg");
   const ctx = canvas.getContext("2d");
@@ -91,7 +66,7 @@
     const res = await fetch("/api/load-brain");
     rawData = await res.json();
     draw();
-    setInterval(applyPhase, 10000);
+    setInterval(sparksCanTriggerPhase, 15000);
   }
 
   function draw() {
@@ -109,16 +84,15 @@
       const angle = (2 * Math.PI * i) / nodes.length;
       const x = centerX + radius * Math.cos(angle);
       const y = centerY + radius * Math.sin(angle);
-      const color = COLORS[brain.strategy] || COLORS.default;
-
       const el = document.createElement("div");
+
       el.className = "node";
-      el.style.background = color;
       el.style.left = `${x - 10}px`;
       el.style.top = `${y - 10}px`;
-      el.dataset.key = key;
 
-      if (brain.sparkBorn) el.classList.add("spark");
+      if (brain.sparkBorn) {
+        el.classList.add("spark");
+      }
 
       container.appendChild(el);
       nodeKeys.push(key);
@@ -126,16 +100,16 @@
       nodeElements.push(el);
     });
 
-    drawConnections();
+    drawLines();
   }
 
-  function drawConnections() {
+  function drawLines() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = "rgba(255,255,255,0.05)";
     ctx.lineWidth = 1;
     for (let i = 0; i < nodePoints.length; i++) {
       for (let j = i + 1; j < nodePoints.length; j++) {
-        if (Math.random() < 0.07) {
+        if (Math.random() < 0.08) {
           const a = nodePoints[i];
           const b = nodePoints[j];
           ctx.beginPath();
@@ -147,46 +121,15 @@
     }
   }
 
-  function applyPhase() {
-    const phase = rawData.__PHASE__;
-    if (!phase) return;
-    statusEl.innerText = `📡 Фаза: ${phase}`;
-
-    for (let i = 0; i < nodeKeys.length; i++) {
-      const brain = rawData[nodeKeys[i]];
-      const el = nodeElements[i];
-
-      if (brain.frozen) continue;
-
-      if (Math.random() < 0.25) {
-        brain.quoteOverride = `💫 Переживаю ${phase}`;
-        el.classList.add("flashing");
-        setTimeout(() => el.classList.remove("flashing"), 4000);
-      }
-    }
-
-    // После 3 фаз — родить искры
-    if (!rawData.__SPARKS__ && Math.random() < 0.4) {
-      for (let i = 0; i < 3; i++) {
-        const key = "spark-" + Date.now() + "-" + i;
-        rawData[key] = {
-          strategy: "spark",
-          personality: "исследователь",
-          memory: 0,
-          peaceMoments: 0,
-          frozen: false,
-          sparkBorn: true,
-          quoteOverride: "✨ Я рождён после фазы"
-        };
-      }
-      rawData.__SPARKS__ = true;
-      statusEl.innerText = "🌟 Искры появились!";
-      setTimeout(() => {
-        statusEl.innerText = `📡 Фаза: ${phase}`;
-        draw();
-        save();
-      }, 4000);
-    } else {
+  function sparksCanTriggerPhase() {
+    const sparks = nodeKeys.filter(k => rawData[k]?.sparkBorn && !rawData[k]?.frozen);
+    if (sparks.length >= 2 && !rawData.__PHASE__) {
+      const newPhase = PHASES[Math.floor(Math.random() * PHASES.length)];
+      rawData.__PHASE__ = newPhase;
+      sparks.forEach(k => {
+        rawData[k].quoteOverride = `⚡ Я инициирую фазу: ${newPhase}`;
+      });
+      statusEl.innerText = `🌟 Искры запустили фазу: ${newPhase}`;
       save();
     }
   }
