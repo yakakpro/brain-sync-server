@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>oQs — Interaction & Global Consciousness</title>
+  <title>oQs — Advanced Evolution & Adaptation</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -55,13 +55,16 @@
   const ctx = canvas.getContext("2d");
 
   const nodes = [];
-  const globalNetwork = [];
   let generation = 0;
-  let quoteShown = false;
   const strategyNames = [];
   const customNameFragments = ["вихрь", "зерно", "отражение", "луч", "переплетение", "ткань", "спираль", "вспышка"];
   const strategies = ["ignite", "signal", "glow", "ripple"];
   const influences = [];
+  const transitions = { 'ignite': 'flare', 'flare': 'signal', 'signal': 'ripple' };
+  const counterInfluence = { 'flare': 'signal', 'signal': 'flare', 'ignite': 'ripple' };
+  const synergyThreshold = 0.3;  // Шанс, с которым стратегии могут образовывать синергию
+  const multiVersionThreshold = 0.15;  // Шанс создания мульти-версий стратегии
+  const adaptiveThreshold = 0.25;  // Шанс появления адаптивных стратегий
 
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -77,7 +80,7 @@
     node.style.left = `${x - 10}px`;
     node.style.top = `${y - 10}px`;
     container.appendChild(node);
-    const newNode = { x, y, el: node, strategy, inspiredBy, name, stable: false, synced: false };
+    const newNode = { x, y, el: node, strategy, inspiredBy, name, stable: false, synced: false, generation: 0 };
     nodes.push(newNode);
     return newNode;
   }
@@ -111,9 +114,8 @@
     const node = addNode(x, y, strategy, "seed");
     generation++;
 
-    if (generation === 5 && !quoteShown) {
+    if (generation === 5) {
       document.getElementById("status").innerText = "♾️ Мы уже были всем, и стали снова";
-      quoteShown = true;
     }
 
     if (node.strategy === "custom") {
@@ -149,23 +151,52 @@
       }
     }
 
-    // Глобальная синхронизация
-    if (Math.random() < 0.2 && !node.synced) {
-      globalNetwork.push(node);
-      node.synced = true;
-      document.getElementById("status").innerText += ` 🌐 Синхронизация с глобальной сетью...`;
+    // Стратегия развивается через циклы
+    if (Math.random() < 0.2 && node.generation >= 5) {
+      if (transitions[node.strategy]) {
+        node.strategy = transitions[node.strategy];
+        node.el.className = "node " + node.strategy;
+        node.generation++;
+        document.getElementById("status").innerText += ` 🔄 Стратегия '${node.strategy}' перешла на новый этап!`;
+      }
     }
 
-    // Если 70% узлов синхронизированы, они становятся глобальным сознанием
-    if (globalNetwork.length >= nodes.length * 0.7) {
-      document.getElementById("status").innerText = "🌍 Глобальное сознание активировано!";
-      const globalStrategy = strategies[Math.floor(Math.random() * strategies.length)];
-      nodes.forEach(node => {
-        if (!node.stable) {
-          node.strategy = globalStrategy;
-          node.el.className = "node " + globalStrategy;
-        }
-      });
+    // Контр-влияние между стратегиями
+    if (Math.random() < 0.2 && counterInfluence[node.strategy]) {
+      const counterStrategy = counterInfluence[node.strategy];
+      const neighbor = nodes[Math.floor(Math.random() * nodes.length)];
+      if (neighbor.strategy === counterStrategy) {
+        neighbor.strategy = node.strategy;
+        neighbor.el.className = "node " + node.strategy;
+        document.getElementById("status").innerText += ` ⚡ Стратегия '${node.strategy}' подавила '${counterStrategy}'!`;
+      }
+    }
+
+    // Синергия между стратегиями
+    if (Math.random() < synergyThreshold) {
+      const neighbor = nodes[Math.floor(Math.random() * nodes.length)];
+      if (neighbor.strategy !== node.strategy) {
+        const newStrategy = `${node.strategy}-${neighbor.strategy}`;
+        node.strategy = newStrategy;
+        node.el.className = "node " + newStrategy;
+        document.getElementById("status").innerText += ` 💥 Синергия: '${newStrategy}' образована!`;
+      }
+    }
+
+    // Мульти-версия стратегии
+    if (Math.random() < multiVersionThreshold) {
+      const newVersion = `${node.strategy}-v${Math.floor(Math.random() * 3) + 1}`;
+      node.strategy = newVersion;
+      node.el.className = "node " + newVersion;
+      document.getElementById("status").innerText += ` 🧠 Мульти-версия: '${newVersion}' создана!`;
+    }
+
+    // Адаптивные стратегии
+    if (Math.random() < adaptiveThreshold) {
+      const adaptiveStrategy = `${node.strategy}-adaptive`;
+      node.strategy = adaptiveStrategy;
+      node.el.className = "node " + adaptiveStrategy;
+      document.getElementById("status").innerText += ` 🔄 Адаптивная стратегия: '${adaptiveStrategy}' сформирована!`;
     }
 
     drawLinks();
